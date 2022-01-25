@@ -1,6 +1,6 @@
 use crate::data::DbId;
 use crate::{ClipError, Time, ShortCode};
-use chrono::{NaiveDateTime};
+use chrono::{NaiveDateTime, Utc};
 use std::convert::TryFrom;
 
 
@@ -16,6 +16,9 @@ pub struct Clip {
     pub(in crate::data) hits: i64,
 }
 
+// this gives the domain access to the inner model clip fields 
+// since they are only available in the data module to prevent
+// unwarranted access to the database
 impl TryFrom<Clip> for crate::domain::clip::Clip {
     type Error = ClipError;
     fn try_from(clip:Clip) -> Result<Self, Self::Error> {
@@ -35,8 +38,19 @@ impl TryFrom<Clip> for crate::domain::clip::Clip {
     }
 }
 
+
 pub struct GetClip {
     pub (in crate::data) shortcode: String,
+}
+
+// turns the getclip req from the ask layer into the appropriate model to be consumed 
+// by the database layer
+impl From<crate::service::ask::GetClip> for GetClip {
+    fn from(req: crate::service::ask::GetClip) -> Self {
+        Self {
+            shortcode:req.shortcode.into_inner(),
+        }
+    }
 }
 
 impl From<ShortCode> for GetClip {
@@ -62,8 +76,22 @@ pub struct NewClip {
     pub(in crate::data) content: String,
     pub(in crate::data) title: Option<String>,
     pub(in crate::data) posted: i64,
-    pub(in crate::data) expires: Option<NaiveDateTime>,
+    pub(in crate::data) expires: Option<i64>,
     pub(in crate::data) password: Option<String>,
+}
+
+impl From<crate::service::ask::NewClip> for NewClip {
+    fn from(req: crate::service::ask::NewClip) -> Self {
+        Self {
+            clip_id:DbId::new().into(),
+            shortcode:ShortCode::default().into(),
+            content: req.content.into_inner(),
+            title: req.title.into_inner(),
+            expires: req.expires.into_inner().map(|time| time.timestamp()),
+            password: req.password.into_inner(),
+            posted: Utc::now().timestamp(),
+        }
+    }
 }
 
 
@@ -73,4 +101,17 @@ pub struct UpdateClip {
     pub(in crate::data) title: Option<String>,
     pub(in crate::data) expires: Option<i64>,
     pub(in crate::data) password: Option<String>,
+}
+
+
+impl From<crate::service::ask::UpdateClip> for  UpdateClip {
+    fn from(req: crate::service::ask::UpdateClip) -> Self {
+        Self {
+            shortcode:ShortCode::default().into(),
+            content: req.content.into_inner(),
+            title: req.title.into_inner(),
+            expires: req.expires.into_inner().map(|time| time.timestamp()),
+            password: req.password.into_inner(),
+        }
+    }
 }

@@ -2,7 +2,7 @@ use crate::domain::clip::ClipError;
  use serde::{Deserialize, Serialize};
  use std::str::FromStr;
 
- #[derive(Clone,  Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
+ #[derive(Clone,  Debug, Serialize, Deserialize, PartialEq, PartialOrd, Default)]
  pub struct Password(Option<String>);
 
  impl Password {
@@ -32,11 +32,11 @@ use crate::domain::clip::ClipError;
 
  }
 
- impl Default for Password {
+/*  impl Default for Password {
       fn default() -> Self {
           Self(None)
       }
- }
+ } */
 
  // helps us to convert form a &str into to the password type that we want
  impl FromStr for Password{
@@ -45,3 +45,5 @@ use crate::domain::clip::ClipError;
           Self::new(s.to_string())
      }
  }
+
+ 
